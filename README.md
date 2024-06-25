@@ -4,7 +4,7 @@ Push AdGuard Home query logs to Elasticsearch
 ## Goal of this project
 The purpose of this project is to propose a solution for sending AdGuard DNS query logs to Elasticsearch. By default, AdGuard Home DNS query logs cannot be forwarded to external services such as syslog server, log collector or forwarder. AdGuard Home creates the query results file locally. In addition, the most important field in this log file is encrypted and cannot be easily verified for details of DNS network traffic.
 
-The ultimate solution for above mentioned issue is to utilize AdGuard Home API (ask AdGuard Home for query logs programatically- the response is not encrypted and can be fully analyzed and investigated) then send the logs to the destination.(Elasticsearch). 
+The ultimate solution for above mentioned issue is to utilize AdGuard Home API (ask AdGuard Home for query logs programatically- the response is not encrypted and can be fully analyzed and investigated) then send the logs to the destination (Elasticsearch). 
 
 This project does not describe how to install and set up components proposed in order to achieve its goal (excluding configuration files for each component). Instead, it gives a ready-made and tested solution for sending DNS query logs to Elasticsearch. These logs can be filtered, analyzed, and searched. Thanks to presence of AdGuard Home query logs in Elasticsearch the security detection rules can be built to alert on unwanted or suspicious network traffic (attempted or successful). It also gives possibility to create a informative (and even fancy) Kibana dashboards.
 
