@@ -1,0 +1,330 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.stdout }}",
+        "format": "x",
+        "options": {}
+      },
+      "id": "e4df9b25-bb0f-4d4d-91c9-e4c92859bbe3",
+      "name": "Convert timestamp to Unix Ms format (1)",
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        -440,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "url": " https:/adguard.domain.tld/control/querylog",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "id": "96bf3ad6-e94f-4934-9a94-8887fc5f623e",
+      "name": "Query AdGuard for DNS query logs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -200,
+        620
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Scs5Kzgsp47bKB84",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "include": "allOtherFields",
+        "options": {
+          "includeBinary": false
+        }
+      },
+      "id": "97afbf3c-3619-48f2-9600-952bdf7135a9",
+      "name": "Split the DNS log Json",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        20,
+        620
+      ],
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "batchSize": 500,
+        "options": {
+          "reset": false
+        }
+      },
+      "id": "ce3455f1-40a1-4faa-a953-c24a33ac39c8",
+      "name": "Loop over DNS logs",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        240,
+        620
+      ],
+      "alwaysOutputData": false,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "command": "=echo '{{ $('Query AdGuard for DNS query logs').item.json.data[0].time }}' > /home/ubuntu/adguard_latest_timestamp.txt"
+      },
+      "id": "d252ae49-13aa-49a3-af96-62504563ff43",
+      "name": "Export newest timestamp to the file",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        460,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "command": "tail /home/ubuntu/adguard_latest_timestamp.txt"
+      },
+      "id": "3d751614-36f6-48e0-9d72-e7e67ee0b386",
+      "name": "Tail file for newest timestamp from previous execution",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.data.time }}",
+        "format": "x",
+        "options": {}
+      },
+      "id": "997b66d4-e5aa-4093-b951-1cfff8f61c48",
+      "name": "Convert timestamp to Unix Ms format (2)",
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        460,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "b575d4c3-c66a-40db-95d3-edb3453cb14e",
+              "leftValue": "={{ $json.formattedDate.toNumber() }}",
+              "rightValue": "={{ $('Convert timestamp to Unix Ms format (1)').item.json.formattedDate.toNumber() }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6312b5cd-7af9-4a29-ae20-7d60870ea10b",
+      "name": "Check if there are logs newer than latest timestamp",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        680,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "executeOnce": false,
+        "command": "=echo '{{ $('Loop over DNS logs').item.json.data.toJsonString() }}' | nc -u fluentbitip 9001 -w 0 -v"
+      },
+      "id": "9cb25b77-0cf5-497d-8c55-a1c63c0bc565",
+      "name": "Push DNS logs to fluentbit",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        920,
+        720
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "b618e62c-744a-4ea4-9cb9-3e7dfccf4ba6",
+      "name": "Blank step",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "id": "b1d496bd-27da-42dc-9c9d-fecde2f935b1",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -880,
+        620
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Convert timestamp to Unix Ms format (1)": {
+      "main": [
+        [
+          {
+            "node": "Query AdGuard for DNS query logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query AdGuard for DNS query logs": {
+      "main": [
+        [
+          {
+            "node": "Split the DNS log Json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split the DNS log Json": {
+      "main": [
+        [
+          {
+            "node": "Loop over DNS logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop over DNS logs": {
+      "main": [
+        [
+          {
+            "node": "Export newest timestamp to the file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Convert timestamp to Unix Ms format (2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tail file for newest timestamp from previous execution": {
+      "main": [
+        [
+          {
+            "node": "Convert timestamp to Unix Ms format (1)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert timestamp to Unix Ms format (2)": {
+      "main": [
+        [
+          {
+            "node": "Check if there are logs newer than latest timestamp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if there are logs newer than latest timestamp": {
+      "main": [
+        [
+          {
+            "node": "Push DNS logs to fluentbit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push DNS logs to fluentbit": {
+      "main": [
+        [
+          {
+            "node": "Blank step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Blank step": {
+      "main": [
+        [
+          {
+            "node": "Loop over DNS logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Tail file for newest timestamp from previous execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bfe4bc82-237e-4545-a864-aadfc105803f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7e27d87d44cdd26a1c8f7abca1903518ef5fe09cc81f561371eafae82822c845"
+  },
+  "id": "TWSZy9opkz02ZWET",
+  "tags": []
+}
