@@ -17,7 +17,7 @@ Four components are neccessary to achive this project goals. Components must be 
 
 Additionally Terraform and [Elasticstack Provider](https://registry.terraform.io/providers/elastic/elasticstack/latest/docs) will be needed to configure Elasticsearch and Kibana.
 
-![diagram](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/8cc05ac2-df98-4770-8176-f0ad8291ae6f)
+![project_wokflow](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/c5d34f25-ff95-4a92-bc33-7aa928040a3b)
 
 ## Components configuration
 The configuration files for n8n, fluentbit and Elasticsearch are part of the repository. Assuming that each component is installed and fully operational (including AdGuard, no configuration is provided), configure the components as follows:
@@ -39,7 +39,7 @@ Once you have encoded credentials:
 
 Workflow should be successfuly imported and visible in n8n UI:
 
-![n8n_workflow](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/661b2b8a-cd10-4a7a-be22-dcecc39bbc31)
+![n8n_workflow](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/2f5505c2-2d75-4363-8764-3878c07331ad)
 
 - SSH to instance where n8n is installed
 - in the home user directory create `adguard_latest_timestamp.txt` file with example content: `2024-06-24T18:46:16.383587612Z`
@@ -78,11 +78,11 @@ note: it is strongly suggested to export Elasticsearch password to environmental
 
 If Terraform working directory initialization was successful, following output shoud be shown in the console:
 
-![terraform_successful_init](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/6de24d78-72d7-424d-bc4e-68f83c4cca46)
+![terraform_successful_init](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/93ee4cca-efbf-485a-b8e7-a59f2b34b822)
 
 Run `terraform plan` command to see the if no errors are raised. If not, then run `terraform apply --auto-approve` command. The output after succesfful run should be:
 
-![terraform_successful_apply](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/06c2bea8-2e46-4f7f-9360-3f3bdcdeacf1)
+![terraform_successful_apply](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/eeec7d1a-7e4d-4c96-b154-ca2385601062)
 
 ## Start streaming logs to Elasticsearch
 
@@ -92,17 +92,17 @@ Two last steps are required to start streaming logs to Elasticsearch:
 
 note: n8n workflow is scheduled to run every 5 minutes. 500 records are retrieved from single API call to AdGuard Home. Let the workflow run few times and investigate how many objects are sent to fluent-bit after deduplication. To check this just verify the number of the items like it is presented below:
 
-![n8n_number_of_items_pushed](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/2d0ee092-dd17-492a-be1a-011087f64db1)
+![n8n_number_of_items_pushed](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/e17510b7-6e18-4723-ae20-6273e5d3beef)
 
 If the number of items hits or is really close to hit 500, that means you should consider running the workflow more frequently than every 5 minutes. To change this simply edit the first workflow step, `"Execute Workflow Trigger"`:
 
-![n8n_edit_workflow_tigger](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/001022f5-0f7e-42d0-a764-d36798735750)
+![n8n_edit_workflow_tigger](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/d857d068-0edc-4431-8d0f-714a87576ec0)
 
 Run the workflow manually for the first time.
 
 Now login to Kibana and go to `Discover`, choose `logs-adguard.dns_query` data view. Voila, AdGuard Home DNS query logs are now accessible in Elasticsearch and fields parsing meets [Elastic Common Schema](https://www.elastic.co/guide/en/ecs/current/ecs-reference.html):
 
-![kibana_view](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/7c758719-0d1c-49a2-8055-46fa595dfb90)
+![kibana_view](https://github.com/MichalMarchewka/adguard-to-elasticsearch/assets/56821715/10986a73-9ad2-47bb-8c52-a40ff69d6c44)
 
 ## Mappings to ECS fields
 |AdGuard log field|ECS field|Custom value|ECS field custom|
